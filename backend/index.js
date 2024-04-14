@@ -1,21 +1,38 @@
 const express = require("express");
 const app = express();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 require("dotenv").config();
-app.use(express.json());
+const stripe = require("stripe")(process.env.STRIPE_SECRET_TEST);
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(cors());
 
-app.post("/create-payment-intent", async (req, res) => {
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: req.body.amount,
-      currency: "usd",
-    });
-    res.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.post("/payment", cors(), async (req, res) => {
+	let { amount, id } = req.body
+	try {
+		const payment = await stripe.paymentIntents.create({
+			amount,
+			currency: "USD",
+			description: "Spatula company",
+			payment_method: id,
+			confirm: true
+		})
+		console.log("Payment", payment)
+		res.json({
+			message: "Payment successful",
+			success: true
+		})
+	} catch (error) {
+		console.log("Error", error)
+		res.json({
+			message: "Payment failed",
+			success: false
+		})
+	}
+})
+
+app.listen(process.env.PORT || 4000, () => {
+  console.log("Sever is listening on port 4000");
 });
-app.listen(3000, () => {
-  console.log("Server is listening on port 3000");
-});   
